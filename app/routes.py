@@ -27,25 +27,45 @@ def handle_planets():
         db.session.add(new_planet)
         db.session.commit()
 
-        return {
+        return jsonify({
             "success": True,
             "message": f"Planet {new_planet.name} has been created."
 
-        }, 201
+        }), 201
 
-@planets_bp.route("/<planet_id>", methods=["GET"])
+@planets_bp.route("/<planet_id>", methods=["GET", "PUT", "DELETE"])
 def handle_planet(planet_id):
     planet = Planet.query.get(planet_id)
 
-    if planet:
-        return {
+    if planet == None:
+        return jsonify({
+        "message": "That's not a planet!",
+        "success": False,
+        }), 404
+
+    elif request.method == "GET":
+        return jsonify({
             "id": planet.id,
             "name": planet.name,
             "description": planet.description,
             "pos_from_sun": planet.pos_from_sun
-        }, 200
+        }), 200
+
+    elif request.method == "PUT":
+        form_data = request.get_json()
+
+        planet.name = form_data["name"]
+        planet.description = form_data["description"]
+        planet.pos_from_sun = form_data["pos_from_sun"]
+        db.session.commit()
+
+        return jsonify({"message": f"Planet with id {planet_id} has been updated",
+        "success": True}), 200
+
+    elif request.method == "DELETE":
+        db.session.delete(planet)
+        db.session.commit()
+        return jsonify({"message": f"Planet with id {planet_id} has been deleted",
+        "success": True}), 200
     
-    return {
-        "message": "That's not a planet!",
-        "success": False,
-    }, 404
+
